@@ -6,13 +6,16 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
 }
 
 model Client {
-    id        Int      @id @default(autoincrement())
-    name      String
+    id   Int    @id @default(autoincrement())
+    name String
+
+    jobs      Job[]
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -28,9 +31,52 @@ model Job {
     projectManager       String
     leadInstaller        String
     logisticsCoordinator String
-    venue                Venue
+    clientId             Int
+    client               Client   @relation(fields: [clientId], references: [id])
+    pieces               Piece[]
+    items                Item[]
+    trucks               Truck[]
     createdAt            DateTime @default(now())
     updatedAt            DateTime @updatedAt
 
     @@index([jobNumber])
+}
+
+model Item {
+    id        Int      @id @default(autoincrement())
+    name      String
+    notes     String?
+    quantity  Int
+    pieces    Piece[]
+    jobId     Int
+    job       Job      @relation(fields: [jobId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([name])
+}
+
+model Piece {
+    id        Int      @id @default(autoincrement())
+    name      String
+    items     Item[]
+    jobId     Int
+    job       Job      @relation(fields: [jobId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([name])
+}
+
+model Truck {
+    id          Int      @id @default(autoincrement())
+    truckNumber String
+    bolNumber   String
+    carrier     String
+    jobId       Int
+    job         Job      @relation(fields: [jobId], references: [id])
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([truckNumber])
 }
