@@ -23,21 +23,23 @@ model Client {
 }
 
 model Job {
-    id                   Int      @id @default(autoincrement())
+    id                   Int       @id @default(autoincrement())
     jobNumber            Int
     showName             String
+    venueId              Int
+    advancedWarehouseId  Int?
     boothNumber          String
-    shipDate             DateTime
+    shipDate             DateTime?
     projectManager       String
-    leadInstaller        String
-    logisticsCoordinator String
+    leadInstaller        String?
+    logisticsCoordinator String?
     clientId             Int
-    client               Client   @relation(fields: [clientId], references: [id])
+    client               Client    @relation(fields: [clientId], references: [id])
     pieces               Piece[]
     items                Item[]
     trucks               Truck[]
-    createdAt            DateTime @default(now())
-    updatedAt            DateTime @updatedAt
+    createdAt            DateTime  @default(now())
+    updatedAt            DateTime  @updatedAt
 
     @@index([jobNumber])
 }
@@ -79,4 +81,22 @@ model Truck {
     updatedAt   DateTime @updatedAt
 
     @@index([truckNumber])
+}
+
+model Location {
+    id        Int          @id @default(autoincrement())
+    type      LocationType
+    name      String
+    address   String
+    city      String
+    state     String
+    createdAt DateTime     @default(now())
+    updatedAt DateTime     @updatedAt
+
+    @@index([name])
+}
+
+enum LocationType {
+    WAREHOUSE
+    VENUE
 }

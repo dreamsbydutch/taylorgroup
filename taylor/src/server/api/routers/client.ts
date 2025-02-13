@@ -2,19 +2,15 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-export const postRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
-    }),
+export const clientRouter = createTRPCRouter({
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    return ctx.db.client.findMany({ orderBy: { name: "asc" } });
+  }),
 
   create: publicProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.post.create({
+      return ctx.db.client.create({
         data: {
           name: input.name,
         },
@@ -22,10 +18,10 @@ export const postRouter = createTRPCRouter({
     }),
 
   getLatest: publicProcedure.query(async ({ ctx }) => {
-    const post = await ctx.db.post.findFirst({
+    const client = await ctx.db.client.findFirst({
       orderBy: { createdAt: "desc" },
     });
 
-    return post ?? null;
+    return client ?? null;
   }),
 });

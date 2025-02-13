@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [formData, setFormData] = useState(
@@ -19,6 +19,34 @@ export default function Home() {
     setFormData(newFormData);
   };
 
+  const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    const textareas = document.querySelectorAll("textarea");
+    textareas.forEach((textarea) =>
+      adjustTextareaHeight(textarea as HTMLTextAreaElement),
+    );
+  }, [formData]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === "s") {
+        event.preventDefault();
+        handleSubmit(
+          new Event("submit") as unknown as React.FormEvent<HTMLFormElement>,
+        );
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   interface FormData {
     qty: string;
     description: string;
@@ -36,6 +64,7 @@ export default function Home() {
   ) => {
     const colOrder: (keyof FormData)[] = ["qty", "description", "notes"];
     const colIndex = colOrder.indexOf(col);
+    const input = event.target as HTMLInputElement;
 
     if (event.key === "Enter" || event.key === "ArrowDown") {
       event.preventDefault();
@@ -53,7 +82,10 @@ export default function Home() {
       if (prevRow) {
         prevRow.focus();
       }
-    } else if (event.key === "ArrowRight") {
+    } else if (
+      event.key === "ArrowRight" &&
+      input.selectionEnd === input.value.length
+    ) {
       event.preventDefault();
       const nextCol = colOrder[colIndex + 1];
       if (nextCol) {
@@ -64,7 +96,7 @@ export default function Home() {
           nextCell.focus();
         }
       }
-    } else if (event.key === "ArrowLeft") {
+    } else if (event.key === "ArrowLeft" && input.selectionStart === 0) {
       event.preventDefault();
       const prevCol = colOrder[colIndex - 1];
       if (prevCol) {
@@ -96,11 +128,11 @@ export default function Home() {
         <table className="m-4 table-auto border-collapse">
           <thead>
             <tr className="grid border-collapse grid-cols-12 bg-gray-700 text-gray-100">
-              <th className="col-span-1 p-1 font-bold">QTY</th>
+              <th className="col-span-2 p-0.5 font-bold md:col-span-1">QTY</th>
               <th className="col-span-6 py-1 pl-6 text-left font-bold">
                 Description
               </th>
-              <th className="col-span-5 py-1 pl-6 text-left font-bold">
+              <th className="col-span-4 py-1 pl-6 text-left font-bold md:col-span-5">
                 Notes
               </th>
             </tr>
@@ -108,7 +140,7 @@ export default function Home() {
           <tbody>
             {formData.map((row, rowIndex) => (
               <tr key={rowIndex} className="grid border-collapse grid-cols-12">
-                <td className="col-span-1 border border-gray-500 p-1">
+                <td className="col-span-2 flex border-b border-l border-r border-gray-500 p-0.5 md:col-span-1">
                   <input
                     type="text"
                     id={`input-${rowIndex}-qty`}
@@ -117,31 +149,33 @@ export default function Home() {
                       handleChange(rowIndex, "qty", e.target.value)
                     }
                     onKeyDown={(e) => handleKeyDown(e, rowIndex, "qty")}
-                    className="w-full border-none text-center focus:outline-none"
+                    className="w-full border-none text-center text-sm focus:outline-none md:text-base"
                   />
                 </td>
-                <td className="col-span-6 border border-gray-500 p-1">
-                  <input
-                    type="text"
+                <td className="col-span-6 flex items-center border-b border-r border-gray-500 p-1">
+                  <textarea
                     id={`input-${rowIndex}-description`}
                     value={row.description}
-                    onChange={(e) =>
-                      handleChange(rowIndex, "description", e.target.value)
-                    }
+                    onChange={(e) => {
+                      handleChange(rowIndex, "description", e.target.value);
+                      adjustTextareaHeight(e.target as HTMLTextAreaElement);
+                    }}
                     onKeyDown={(e) => handleKeyDown(e, rowIndex, "description")}
-                    className="w-full border-none focus:outline-none"
+                    className="scrollbar-hidden w-full resize-none border-none text-sm focus:outline-none md:text-base"
+                    rows={1}
                   />
                 </td>
-                <td className="col-span-5 border border-gray-500 p-1">
-                  <input
-                    type="text"
+                <td className="col-span-4 flex items-center border-b border-r border-gray-500 p-1 md:col-span-5">
+                  <textarea
                     id={`input-${rowIndex}-notes`}
                     value={row.notes}
-                    onChange={(e) =>
-                      handleChange(rowIndex, "notes", e.target.value)
-                    }
+                    onChange={(e) => {
+                      handleChange(rowIndex, "notes", e.target.value);
+                      adjustTextareaHeight(e.target as HTMLTextAreaElement);
+                    }}
                     onKeyDown={(e) => handleKeyDown(e, rowIndex, "notes")}
-                    className="w-full border-none focus:outline-none"
+                    className="w-full resize-none border-none text-sm focus:outline-none md:text-base"
+                    rows={1}
                   />
                 </td>
               </tr>
