@@ -122,7 +122,7 @@ export default function Home() {
   return (
     <div className="w-full">
       <div className="text-center text-2xl font-bold">
-        TAYLOR GROUP ITEMS LIST
+        TAYLOR GROUP ITEMS LISTS
       </div>
       <form onSubmit={handleSubmit}>
         <table className="m-4 table-auto border-collapse">
