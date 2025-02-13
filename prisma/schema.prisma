@@ -11,9 +11,16 @@ datasource db {
     directUrl = env("DIRECT_URL")
 }
 
-model Client {
-    id   Int    @id @default(autoincrement())
-    name String
+model TaylorClient {
+    id      Int     @id @default(autoincrement())
+    name    String
+    email   String?
+    phone   String?
+    address String?
+    city    String?
+    postal  String?
+    state   String?
+    country String?
 
     jobs      Job[]
     createdAt DateTime @default(now())
