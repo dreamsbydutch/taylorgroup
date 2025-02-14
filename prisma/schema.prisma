@@ -30,7 +30,7 @@ model TaylorClient {
 }
 
 model Job {
-    id                   Int       @id @default(autoincrement())
+    id                   Int          @id @default(autoincrement())
     jobNumber            Int
     showName             String
     venueId              Int
@@ -40,13 +40,13 @@ model Job {
     projectManager       String
     leadInstaller        String?
     logisticsCoordinator String?
-    clientId             Int
-    client               Client    @relation(fields: [clientId], references: [id])
+    taylorClientId       Int
+    taylorClient         TaylorClient @relation(fields: [taylorClientId], references: [id])
     pieces               Piece[]
     items                Item[]
     trucks               Truck[]
-    createdAt            DateTime  @default(now())
-    updatedAt            DateTime  @updatedAt
+    createdAt            DateTime     @default(now())
+    updatedAt            DateTime     @updatedAt
 
     @@index([jobNumber])
 }
