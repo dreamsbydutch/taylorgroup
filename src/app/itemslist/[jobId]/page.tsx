@@ -1,10 +1,10 @@
 import ItemsList from "~/app/_components/ItemsList";
 
-export default async function ItemsListPage({
+export default function ItemsListPage({
   params,
 }: {
   params: { jobId: string };
 }) {
-  const { jobId } = await params;
+  const { jobId } = params;
   return <ItemsList jobId={+jobId} />;
 }
