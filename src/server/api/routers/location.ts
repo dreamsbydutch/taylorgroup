@@ -10,6 +10,14 @@ export const locationRouter = createTRPCRouter({
     return ctx.db.location.findMany();
   }),
 
+  getById: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.location.findFirst({
+        where: { id: input.id },
+      });
+    }),
+
   create: publicProcedure
     .input(
       z.object({

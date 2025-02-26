@@ -6,11 +6,11 @@ export const jobRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.job.findMany({ orderBy: { jobNumber: "asc" } });
   }),
-  getById: publicProcedure
-    .input(z.object({ id: z.number() }))
+  getByJobNumber: publicProcedure
+    .input(z.object({ jobNumber: z.number() }))
     .query(async ({ ctx, input }) => {
       return ctx.db.job.findFirst({
-        where: { id: input.id },
+        where: { jobNumber: input.jobNumber },
       });
     }),
 
@@ -18,8 +18,7 @@ export const jobRouter = createTRPCRouter({
     .input(
       z.object({
         jobNumber: z.number().min(1),
-        projectManager: z.string().min(1),
-        shipDate: z.date().optional(),
+        projectManagerId: z.number().min(1),
         showName: z.string().min(1),
         clientName: z.string().min(1),
         boothNumber: z.string().min(1),
@@ -30,8 +29,7 @@ export const jobRouter = createTRPCRouter({
       return ctx.db.job.create({
         data: {
           jobNumber: input.jobNumber,
-          projectManager: input.projectManager,
-          shipDate: input.shipDate,
+          projectManagerId: input.projectManagerId,
           showName: input.showName,
           clientName: input.clientName,
           boothNumber: input.boothNumber,

@@ -13,6 +13,7 @@ export const env = createEnv({
       .default("development"),
     DIRECT_URL: z.string(),
     SUPABASE_JWT_SECRET: z.string(),
+    GOOGLE_MAPS_API_KEY:z.string(),
   },
 
   /**
@@ -35,6 +36,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     DIRECT_URL: process.env.DIRECT_URL,
     SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
+    GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,

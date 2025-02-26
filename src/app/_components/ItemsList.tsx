@@ -8,25 +8,39 @@ interface FormData {
   qty: string;
   description: string;
   notes: string;
-  newOrExisting: boolean;
+  newOrExisting: string;
   value: number;
+  skidType: string;
   itemType: string;
   boothElement?: string;
   skidID: string;
 }
 
-const itemTypes = ["Type1", "Type2", "Type3"]; // Replace with actual item types
+const itemTypes = [
+  "Aluminum Frames",
+  "Wall Panels",
+  "Custom Millwork",
+  "Custom Aluminum",
+  "Other",
+]; // Replace with actual item types
 const boothElements = ["Element1", "Element2", "Element3"]; // Replace with actual booth elements
+const newOrExistingOptions = ["New", "Existing", "Rental"];
+const skidTypes = ["Skid", "Crate", "Fabric Bin", "A-Frame", "Other"]; // Replace with actual skid types
 
-export default function ItemsList({ jobId }: { jobId: number }) {
-  const job = api.job.getById.useQuery({ id: jobId }).data;
+export default function ItemsList({ jobNumber }: { jobNumber: number }) {
+  const job = api.job.getByJobNumber.useQuery({ jobNumber: jobNumber }).data;
+  const [view, setView] = useState<
+    "Account Manager" | "Project Manager" | "Logistics Coordinator"
+  >("Account Manager");
+
   const [formData, setFormData] = useState<FormData[]>(
     Array.from({ length: 100 }, () => ({
       qty: "",
       description: "",
       notes: "",
-      newOrExisting: false,
+      newOrExisting: "",
       value: 0,
+      skidType: "",
       itemType: "",
       boothElement: "",
       skidID: "",
@@ -84,6 +98,7 @@ export default function ItemsList({ jobId }: { jobId: number }) {
       "notes",
       "newOrExisting",
       "value",
+      "skidType",
       "itemType",
       "boothElement",
       "skidID",
@@ -147,6 +162,7 @@ export default function ItemsList({ jobId }: { jobId: number }) {
           a.notes ||
           a.newOrExisting ||
           a.value ||
+          a.skidType ||
           a.itemType ||
           a.boothElement ||
           a.skidID,
@@ -154,48 +170,79 @@ export default function ItemsList({ jobId }: { jobId: number }) {
     );
   };
 
-  const columns = [
-    {
-      id: "qty",
-      label: "Qty",
-      className: "w-[10%] min-w-[60px] border-l max-w-[100px]",
-    },
-    {
-      id: "description",
-      label: "Description",
-      className: "min-w-[300px] w-full",
-    },
-    {
-      id: "notes",
-      label: "Notes",
-      className: "w-[17.5%] xl:w-[15%] min-w-[200px]",
-    },
-    {
-      id: "newOrExisting",
-      label: "New Build",
-      className: "w-[12.5%] xl:w-[10%] min-w-[100px]",
-    },
-    {
-      id: "value",
-      label: "Value",
-      className: "hidden xl:flex xl:w-[100px] min-w-[100px]",
-    },
-    {
-      id: "itemType",
-      label: "Item Type",
-      className: "hidden xl:flex xl:w-[150px] min-w-[100px]",
-    },
-    {
-      id: "boothElement",
-      label: "Booth Element",
-      className: "w-[150px] min-w-[150px]",
-    },
-    {
-      id: "skidID",
-      label: "Skid ID",
-      className: "w-[12.5%] xl:w-[10%] min-w-[80px] max-w-[120px]",
-    },
-  ];
+  const columns = {
+    "Account Manager": [
+      {
+        id: "qty",
+        label: "Qty",
+        className: "w-[10%] min-w-[60px] border-l max-w-[100px]",
+      },
+      {
+        id: "description",
+        label: "Description",
+        className: "min-w-[300px] w-full",
+      },
+      {
+        id: "newOrExisting",
+        label: "New/Existing",
+        className: "w-[12.5%] xl:w-[10%] min-w-[100px]",
+      },
+      {
+        id: "value",
+        label: "Value",
+        className: "w-[10%] xl:w-[100px] min-w-[100px]",
+      },
+    ],
+    "Project Manager": [
+      {
+        id: "qty",
+        label: "Qty",
+        className: "w-[10%] min-w-[60px] border-l max-w-[100px]",
+      },
+      {
+        id: "description",
+        label: "Description",
+        className: "min-w-[300px] w-full",
+      },
+      {
+        id: "notes",
+        label: "Notes",
+        className: "w-[17.5%] xl:w-[15%] min-w-[175px]",
+      },
+      {
+        id: "newOrExisting",
+        label: "New/Existing",
+        className: "w-[12.5%] xl:w-[10%] min-w-[100px]",
+      },
+    ],
+    "Logistics Coordinator": [
+      {
+        id: "qty",
+        label: "Qty",
+        className: "w-[10%] min-w-[60px] border-l max-w-[100px]",
+      },
+      {
+        id: "description",
+        label: "Description",
+        className: "min-w-[300px] w-full",
+      },
+      {
+        id: "notes",
+        label: "Notes",
+        className: "w-[17.5%] xl:w-[15%] min-w-[175px]",
+      },
+      {
+        id: "skidType",
+        label: "Skid Type",
+        className: "w-[12.5%] xl:w-[10%] min-w-[100px]",
+      },
+      {
+        id: "skidID",
+        label: "Skid ID",
+        className: "w-[12.5%] xl:w-[10%] min-w-[80px] max-w-[120px]",
+      },
+    ],
+  };
 
   return (
     <div className="my-2 w-full">
@@ -205,10 +252,35 @@ export default function ItemsList({ jobId }: { jobId: number }) {
           {job?.clientName} @ {job?.showName}
         </div>
       </div>
+      <div className="my-4 flex justify-center">
+        {["Account Manager", "Project Manager", "Logistics Coordinator"].map(
+          (role) => (
+            <button
+              key={role}
+              onClick={() =>
+                setView(
+                  role as
+                    | "Account Manager"
+                    | "Project Manager"
+                    | "Logistics Coordinator",
+                )
+              }
+              className={cn(
+                "mx-2 rounded px-4 py-2",
+                view === role
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-black",
+              )}
+            >
+              {role}
+            </button>
+          ),
+        )}
+      </div>
       <form onSubmit={handleSubmit}>
         <div className="m-4 flex flex-col flex-nowrap justify-center overflow-scroll">
           <div className="flex">
-            {columns.map((col) => (
+            {columns[view].map((col) => (
               <div
                 key={col.id}
                 className={cn(
@@ -225,7 +297,7 @@ export default function ItemsList({ jobId }: { jobId: number }) {
           </div>
           {formData.map((row, rowIndex) => (
             <div key={rowIndex} className="flex">
-              {columns.map((col) => (
+              {columns[view].map((col) => (
                 <CellTemplate
                   key={col.id}
                   rowIndex={rowIndex}
@@ -235,6 +307,7 @@ export default function ItemsList({ jobId }: { jobId: number }) {
                   handleKeyDown={handleKeyDown}
                   adjustTextareaHeight={adjustTextareaHeight}
                   className={`border-b border-r border-gray-500 ${col.className}`}
+                  view={view}
                 />
               ))}
             </div>
@@ -267,6 +340,7 @@ interface CellTemplateProps {
   ) => void;
   adjustTextareaHeight: (textarea: HTMLTextAreaElement) => void;
   className: string;
+  view: "Account Manager" | "Project Manager" | "Logistics Coordinator";
 }
 
 const CellTemplate: React.FC<CellTemplateProps> = ({
@@ -277,43 +351,14 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
   handleKeyDown,
   adjustTextareaHeight,
   className,
+  view,
 }) => {
-  return (
-    <div className={`flex items-center p-1 ${className}`}>
-      {col === "qty" || col === "value" || col === "skidID" ? (
-        <input
-          type="text"
-          id={`input-${rowIndex}-${col}`}
-          value={value as string}
-          onChange={(e) => handleChange(rowIndex, col, e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e, rowIndex, col)}
-          className="w-full border-none text-center text-sm focus:outline-none md:text-base"
-        />
-      ) : col === "newOrExisting" ? (
-        <input
-          type="checkbox"
-          id={`input-${rowIndex}-${col}`}
-          checked={value as boolean}
-          onChange={(e) => handleChange(rowIndex, col, e.target.checked)}
-          className="w-full border-none text-center text-sm focus:outline-none md:text-base"
-        />
-      ) : col === "itemType" || col === "boothElement" ? (
-        <select
-          id={`input-${rowIndex}-${col}`}
-          value={value as string}
-          onChange={(e) => handleChange(rowIndex, col, e.target.value)}
-          className="w-full border-none text-center text-sm focus:outline-none md:text-base"
-        >
-          <option value="" disabled hidden>
-            Choose an Option
-          </option>
-          {(col === "itemType" ? itemTypes : boothElements).map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-      ) : (
+  const isEditable =
+    view === "Project Manager" || (col !== "qty" && col !== "description");
+
+  const renderInput = () => {
+    if (col === "qty" || col === "description") {
+      return view === "Project Manager" ? (
         <textarea
           id={`input-${rowIndex}-${col}`}
           value={value as string}
@@ -322,10 +367,90 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
             adjustTextareaHeight(e.target as HTMLTextAreaElement);
           }}
           onKeyDown={(e) => handleKeyDown(e, rowIndex, col)}
-          className="scrollbar-hidden w-full resize-none border-none text-sm focus:outline-none md:text-base"
-          rows={1}
+          className={cn(
+            "scrollbar-hidden w-full resize-none border-none text-sm focus:outline-none md:text-base",
+            col === "qty" ? "text-center" : "",
+          )}
         />
+      ) : (
+        <span
+          className={cn(
+            "w-full text-sm md:text-base",
+            col === "qty" ? "text-center" : "",
+            col === "description" ? "whitespace-pre-wrap" : "",
+          )}
+        >
+          {value}
+        </span>
+      );
+    }
+
+    if (col === "newOrExisting") {
+      return (
+        <select
+          id={`input-${rowIndex}-${col}`}
+          value={value as string}
+          onChange={(e) => handleChange(rowIndex, col, e.target.value)}
+          className="w-full border-none text-center text-sm focus:outline-none md:text-base"
+        >
+          {newOrExistingOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    if (col === "skidType" || col === "itemType" || col === "boothElement") {
+      const options =
+        col === "skidType"
+          ? skidTypes
+          : col === "itemType"
+            ? itemTypes
+            : boothElements;
+      return (
+        <select
+          id={`input-${rowIndex}-${col}`}
+          value={value as string}
+          onChange={(e) => handleChange(rowIndex, col, e.target.value)}
+          className="w-full border-none text-center text-sm focus:outline-none md:text-base"
+        >
+          {options.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    return (
+      <textarea
+        id={`input-${rowIndex}-${col}`}
+        value={value as string}
+        onChange={(e) => {
+          handleChange(rowIndex, col, e.target.value);
+          adjustTextareaHeight(e.target as HTMLTextAreaElement);
+        }}
+        onKeyDown={(e) => handleKeyDown(e, rowIndex, col)}
+        className="scrollbar-hidden w-full resize-none border-none text-sm focus:outline-none md:text-base"
+        rows={1}
+      />
+    );
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex items-center p-1",
+        className,
+        (col === "qty" || col === "description") && view !== "Project Manager"
+          ? "border-white border-b-slate-200"
+          : "",
       )}
+    >
+      {renderInput()}
     </div>
   );
 };

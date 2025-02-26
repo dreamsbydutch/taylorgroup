@@ -7,7 +7,7 @@ import {
   UseFormRegister,
   Controller,
 } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "~/lib/utils";
 import {
   Select,
@@ -22,8 +22,6 @@ import CreateLocation from "./CreateLocation";
 import { api } from "~/trpc/react";
 import { Location, User } from "@prisma/client";
 import { createJob } from "~/server/api/actions/job";
-// import { createJob } from "~/server/api/actions/job";
-// import { getLocations, getEmployees } from "~/server/api/actions/location";
 
 interface JobFormInputs {
   jobNumber: number;
@@ -32,10 +30,15 @@ interface JobFormInputs {
   venueId: number;
   advancedWarehouseId?: number;
   boothNumber: string;
-  shipDate?: Date;
-  projectManager: string;
-  leadInstaller?: string;
-  logisticsCoordinator?: string;
+  servicesDeadline?: Date;
+  advancedDeadline?: Date;
+  installStartDate?: Date;
+  showStartDate?: Date;
+  showEndDate?: Date;
+  dismantleEndDate?: Date;
+  projectManagerId: number;
+  leadInstallerId?: string;
+  logisticsCoordinatorId?: string;
 }
 
 export default function CreateJobForm() {
@@ -45,18 +48,42 @@ export default function CreateJobForm() {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<JobFormInputs>();
 
-  const employees: User[] | undefined = api.user.getAll.useQuery().data;
-  const locations: Location[] | undefined = api.location.getAll.useQuery().data;
+  const employeesQuery = api.user.getAll.useQuery();
+  const locationsQuery = api.location.getAll.useQuery();
+
+  const employees: User[] | undefined = employeesQuery.data;
+  const locations: Location[] | undefined = locationsQuery.data;
+
+  const utils = api.useUtils();
 
   const onSubmit: SubmitHandler<JobFormInputs> = async (data) => {
     data.jobNumber = +data.jobNumber;
+    data.projectManagerId = +data.projectManagerId;
     data.venueId = +data.venueId;
-    data.shipDate = data.shipDate ? new Date(data.shipDate) : undefined;
     await createJob(data);
     console.log("Job created:", data);
+    reset({
+      jobNumber: 0,
+      clientName: "",
+      showName: "",
+      venueId: undefined,
+      advancedWarehouseId: undefined,
+      boothNumber: "",
+      servicesDeadline: undefined,
+      advancedDeadline: undefined,
+      installStartDate: undefined,
+      showStartDate: undefined,
+      showEndDate: undefined,
+      dismantleEndDate: undefined,
+      projectManagerId: undefined,
+      leadInstallerId: undefined,
+      logisticsCoordinatorId: undefined,
+    });
+    utils.job.invalidate();
   };
 
   const standardFormFields = [
@@ -88,24 +115,63 @@ export default function CreateJobForm() {
       required: true,
       className: ["w-36", "", ""],
     },
+  ];
+
+  const deadlineFormFields = [
     {
-      id: "shipDate",
-      label: "Ship Date",
+      id: "servicesDeadline",
+      label: "Services Deadline",
       type: "datetime-local",
       required: false,
-      className: ["w-42", "", ""],
+      className: ["w-48", "", ""],
+    },
+    {
+      id: "advancedDeadline",
+      label: "Advanced Deadline",
+      type: "datetime-local",
+      required: false,
+      className: ["w-48", "", ""],
+    },
+    {
+      id: "installStartDate",
+      label: "Install Start Date",
+      type: "datetime-local",
+      required: true,
+      className: ["w-48", "", ""],
+    },
+    {
+      id: "showStartDate",
+      label: "Show Start Date",
+      type: "datetime-local",
+      required: true,
+      className: ["w-48", "", ""],
+    },
+    {
+      id: "showEndDate",
+      label: "Show End Date",
+      type: "datetime-local",
+      required: true,
+      className: ["w-48", "", ""],
+    },
+    {
+      id: "dismantleEndDate",
+      label: "Dismantle End Date",
+      type: "datetime-local",
+      required: true,
+      className: ["w-48", "", ""],
     },
   ];
+
   const dropdownFormFields = [
     {
       type: "employee",
-      id: "projectManager",
+      id: "projectManagerId",
       label: "Project Manager",
       options: employees?.filter(
         (employee) => employee.position === "PROJECT_MANAGER",
       ),
       required: true,
-      className: ["w-56", "", ""],
+      className: ["w-64", "", ""],
       handleCreateNew: () => setIsEmployeeModalOpen(true),
     },
     {
@@ -114,7 +180,7 @@ export default function CreateJobForm() {
       label: "Venue",
       options: locations?.filter((location) => location.type === "VENUE"),
       required: true,
-      className: ["w-56", "", ""],
+      className: ["w-64", "", ""],
       handleCreateNew: () => setIsLocationModalOpen(true),
     },
     {
@@ -123,39 +189,53 @@ export default function CreateJobForm() {
       label: "Advanced Warehouse",
       options: locations?.filter((location) => location.type === "WAREHOUSE"),
       required: false,
-      className: ["w-56", "", ""],
+      className: ["w-64", "", ""],
       handleCreateNew: () => setIsLocationModalOpen(true),
     },
     {
       type: "employee",
-      id: "logisticsCoordinator",
+      id: "logisticsCoordinatorId",
       label: "Logistics Coordinator",
       options: employees?.filter(
         (employee) => employee.position === "LOGISTICS_COORDINATOR",
       ),
       required: false,
-      className: ["w-56", "", ""],
+      className: ["w-64", "", ""],
       handleCreateNew: () => setIsEmployeeModalOpen(true),
     },
     {
       type: "employee",
-      id: "leadInstaller",
+      id: "leadInstallerId",
       label: "Lead Installer",
       options: employees?.filter(
         (employee) => employee.position === "LEAD_INSTALLER",
       ),
       required: false,
-      className: ["w-56", "", ""],
+      className: ["w-64", "", ""],
       handleCreateNew: () => setIsEmployeeModalOpen(true),
     },
   ];
 
   return (
-    <div className="mx-4 my-8 flex flex-col items-center rounded-lg border border-gray-900 bg-gray-100 p-4 shadow-lg">
+    <div className="mx-4">
       <h2 className="mb-4 text-2xl font-bold">Create Job</h2>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
+        <div className="flex flex-wrap gap-x-4 gap-y-3">
           {standardFormFields.map((field) => (
+            <StandardFormField
+              key={field.id}
+              {...{
+                id: field.id,
+                label: field.label,
+                type: field.type,
+                required: field.required,
+                register,
+                errors,
+                className: field.className,
+              }}
+            />
+          ))}
+          {deadlineFormFields.map((field) => (
             <StandardFormField
               key={field.id}
               {...{
@@ -184,19 +264,26 @@ export default function CreateJobForm() {
               }}
             />
           ))}
-          <button
-            type="submit"
-            className="w-[200px] rounded bg-blue-500 p-2 text-white"
-          >
-            Create Job
-          </button>
         </div>
+        <button type="submit" className="rounded bg-blue-500 p-2 text-white">
+          Create Job
+        </button>
       </form>
       {isEmployeeModalOpen && (
-        <CreateEmployee onClose={() => setIsEmployeeModalOpen(false)} />
+        <CreateEmployee
+          onClose={() => {
+            setIsEmployeeModalOpen(false);
+            employeesQuery.refetch();
+          }}
+        />
       )}
       {isLocationModalOpen && (
-        <CreateLocation onClose={() => setIsLocationModalOpen(false)} />
+        <CreateLocation
+          onClose={() => {
+            setIsLocationModalOpen(false);
+            locationsQuery.refetch();
+          }}
+        />
       )}
     </div>
   );
@@ -266,7 +353,7 @@ function DropdownField({
 }) {
   const [selectOpen, setSelectOpen] = useState(false);
   return (
-    <div className={cn("flex w-full max-w-4xl bg-white", className?.[0])}>
+    <div className={cn(className?.[0], "flex max-w-4xl items-center")}>
       <Controller
         name={name}
         control={control}
@@ -275,9 +362,10 @@ function DropdownField({
             open={selectOpen}
             onOpenChange={setSelectOpen}
             onValueChange={(value) => field.onChange(value)}
+            value={field.value || ""}
           >
             <SelectTrigger
-              className={cn("data-[placeholder]:text-gray-400", className?.[1])}
+              className={cn(className?.[1], "data-[placeholder]:text-gray-400")}
             >
               <SelectValue
                 placeholder={`Choose ${label.startsWith("Advanced") ? "an" : "a"} ${label}`}
@@ -286,10 +374,7 @@ function DropdownField({
             <SelectContent>
               <Button
                 variant="secondary"
-                className={cn(
-                  "w-full text-center font-semibold",
-                  className?.[2],
-                )}
+                className="w-full text-center font-semibold"
                 onClick={() => {
                   setSelectOpen(false);
                   handleCreateNew(label);
@@ -312,7 +397,7 @@ function DropdownField({
           </Select>
         )}
       />
-      {required && <span className="bg-gray-100 pl-2 text-red-500">*</span>}
+      {required && <span className="pl-2 text-red-500">*</span>}
     </div>
   );
 }

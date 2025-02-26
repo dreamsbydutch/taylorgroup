@@ -26,8 +26,7 @@ model User {
 }
 
 model Job {
-    id                  Int    @id @default(autoincrement())
-    jobNumber           Int
+    jobNumber           Int    @id @unique
     clientName          String
     showName            String
     venueId             Int
@@ -36,17 +35,17 @@ model Job {
 
     servicesDeadline DateTime?
     advancedDeadline DateTime?
-    installStartDate DateTime
-    showStartDate    DateTime
-    showEndDate      DateTime
-    dismantleEndDate DateTime
+    installStartDate DateTime?
+    showStartDate    DateTime?
+    showEndDate      DateTime?
+    dismantleEndDate DateTime?
 
     advancedShipDate DateTime?
     directShipDate   DateTime?
     teamShipDate     DateTime?
     returnShipDate   DateTime?
 
-    projectManagerId       Int
+    projectManagerId       Int?
     leadInstallerId        Int?
     logisticsCoordinatorId Int?
     graphicsManagerId      Int?
@@ -62,13 +61,17 @@ model Job {
 }
 
 model Item {
-    id        Int      @id @default(autoincrement())
-    name      String
-    notes     String?
-    quantity  Int
-    pieces    Piece[]
-    jobId     Int
-    job       Job      @relation(fields: [jobId], references: [id])
+    id       Int     @id @default(autoincrement())
+    quantity Int
+    name     String
+    notes    String?
+
+    tariffCodeId Int
+    tariffCode   TariffCode @relation(fields: [tariffCodeId], references: [id])
+    pieceID      Int
+    piece        Piece      @relation(fields: [pieceID], references: [id])
+    jobs         Job[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -79,8 +82,9 @@ model Piece {
     id        Int      @id @default(autoincrement())
     name      String
     items     Item[]
-    jobId     Int
-    job       Job      @relation(fields: [jobId], references: [id])
+    trucks    Truck[]
+    jobNumber Int
+    job       Job      @relation(fields: [jobNumber], references: [jobNumber])
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -92,8 +96,9 @@ model Truck {
     truckNumber String
     bolNumber   String
     carrier     String
-    jobId       Int
-    job         Job      @relation(fields: [jobId], references: [id])
+    pieces      Piece[]
+    jobNumber   Int
+    job         Job      @relation(fields: [jobNumber], references: [jobNumber])
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
@@ -101,18 +106,31 @@ model Truck {
 }
 
 model Location {
-    id        Int          @id @default(autoincrement())
-    type      LocationType
-    name      String
-    address   String
-    city      String
-    state     String
-    zip       String
-    country   String
-    createdAt DateTime     @default(now())
-    updatedAt DateTime     @updatedAt
+    id           Int          @id @default(autoincrement())
+    type         LocationType
+    name         String
+    address      String
+    city         String
+    state        String
+    zip          String
+    country      String
+    shippingTime Float?
+    createdAt    DateTime     @default(now())
+    updatedAt    DateTime     @updatedAt
 
     @@index([name])
+}
+
+model TariffCode {
+    id          Int      @id @default(autoincrement())
+    code        String
+    description String
+    name        String
+    items       Item[]
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([code])
 }
 
 enum LocationType {
