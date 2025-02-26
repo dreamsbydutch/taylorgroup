@@ -264,10 +264,10 @@ export default function CreateJobForm() {
               }}
             />
           ))}
+          <button type="submit" className="rounded bg-blue-500 p-2 text-white">
+            Create Job
+          </button>
         </div>
-        <button type="submit" className="rounded bg-blue-500 p-2 text-white">
-          Create Job
-        </button>
       </form>
       {isEmployeeModalOpen && (
         <CreateEmployee

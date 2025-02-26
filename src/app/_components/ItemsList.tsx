@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -16,6 +17,11 @@ interface FormData {
   skidID: string;
 }
 
+interface HeaderData {
+  text: string;
+  color: string;
+}
+
 const itemTypes = [
   "Aluminum Frames",
   "Wall Panels",
@@ -26,8 +32,19 @@ const itemTypes = [
 const boothElements = ["Element1", "Element2", "Element3"]; // Replace with actual booth elements
 const newOrExistingOptions = ["New", "Existing", "Rental"];
 const skidTypes = ["Skid", "Crate", "Fabric Bin", "A-Frame", "Other"]; // Replace with actual skid types
+const colors = [
+  "blue",
+  "red",
+  "green",
+  "yellow",
+  "purple",
+  "orange",
+  "pink",
+  "gray",
+];
 
 export default function ItemsList({ jobNumber }: { jobNumber: number }) {
+  const router = useRouter();
   const job = api.job.getByJobNumber.useQuery({ jobNumber: jobNumber }).data;
   const [view, setView] = useState<
     "Account Manager" | "Project Manager" | "Logistics Coordinator"
@@ -46,6 +63,14 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
       skidID: "",
     })),
   );
+
+  const [headerData, setHeaderData] = useState<{ [key: number]: HeaderData }>(
+    {},
+  );
+  const [modalVisible, setModalVisible] = useState(false);
+  const [currentRow, setCurrentRow] = useState<number | null>(null);
+  const [headerText, setHeaderText] = useState("");
+  const [headerColor, setHeaderColor] = useState(colors[0]);
 
   const handleChange = (
     rowIndex: number,
@@ -170,6 +195,48 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
     );
   };
 
+  const handleRowDoubleClick = (rowIndex: number) => {
+    if (view !== "Project Manager") return;
+    setCurrentRow(rowIndex);
+    if (headerData[rowIndex]) {
+      setHeaderText(headerData[rowIndex].text);
+      setHeaderColor(headerData[rowIndex].color);
+    } else {
+      setHeaderText("");
+      setHeaderColor(colors[0]);
+    }
+    setModalVisible(true);
+  };
+
+  const handleModalSubmit = () => {
+    if (currentRow !== null) {
+      setHeaderData((prevHeaderData) => {
+        const newHeaderData = { ...prevHeaderData };
+        newHeaderData[currentRow] = {
+          text: headerText || "",
+          color: headerColor ?? "blue",
+        };
+        return newHeaderData;
+      });
+      setModalVisible(false);
+      setHeaderText("");
+      setHeaderColor(colors[0]);
+    }
+  };
+
+  const handleDeleteHeader = () => {
+    if (currentRow !== null) {
+      setHeaderData((prevHeaderData) => {
+        const newHeaderData = { ...prevHeaderData };
+        delete newHeaderData[currentRow];
+        return newHeaderData;
+      });
+      setModalVisible(false);
+      setHeaderText("");
+      setHeaderColor(colors[0]);
+    }
+  };
+
   const columns = {
     "Account Manager": [
       {
@@ -195,9 +262,14 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
     ],
     "Project Manager": [
       {
+        id: "newOrExisting",
+        label: "New/Existing",
+        className: "w-[12.5%] xl:w-[10%] min-w-[100px] border-l ",
+      },
+      {
         id: "qty",
         label: "Qty",
-        className: "w-[10%] min-w-[60px] border-l max-w-[100px]",
+        className: "w-[10%] min-w-[60px] max-w-[100px]",
       },
       {
         id: "description",
@@ -207,12 +279,7 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
       {
         id: "notes",
         label: "Notes",
-        className: "w-[17.5%] xl:w-[15%] min-w-[175px]",
-      },
-      {
-        id: "newOrExisting",
-        label: "New/Existing",
-        className: "w-[12.5%] xl:w-[10%] min-w-[100px]",
+        className: "w-[17.5%] xl:w-[45%] min-w-[175px]",
       },
     ],
     "Logistics Coordinator": [
@@ -246,6 +313,12 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
 
   return (
     <div className="my-2 w-full">
+      <button
+        onClick={() => router.push("/")}
+        className="absolute left-4 top-4 rounded bg-gray-500 px-4 py-2 text-white"
+      >
+        Back
+      </button>
       <div className="text-center text-2xl font-bold md:text-4xl">
         <div>{job?.jobNumber}</div>
         <div>
@@ -296,20 +369,38 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
             ))}
           </div>
           {formData.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex">
-              {columns[view].map((col) => (
-                <CellTemplate
-                  key={col.id}
-                  rowIndex={rowIndex}
-                  col={col.id as keyof FormData}
-                  value={row[col.id as keyof FormData]}
-                  handleChange={handleChange}
-                  handleKeyDown={handleKeyDown}
-                  adjustTextareaHeight={adjustTextareaHeight}
-                  className={`border-b border-r border-gray-500 ${col.className}`}
-                  view={view}
-                />
-              ))}
+            <div key={rowIndex}>
+              {headerData[rowIndex] ? (
+                <div
+                  className={cn(
+                    "flex items-center justify-start border pl-16 text-lg font-bold",
+                    `bg-${headerData[rowIndex].color}-100`,
+                    `border-${headerData[rowIndex].color}-800`,
+                  )}
+                  onDoubleClick={() => handleRowDoubleClick(rowIndex)}
+                >
+                  {headerData[rowIndex].text}
+                </div>
+              ) : (
+                <div
+                  className="flex"
+                  onDoubleClick={() => handleRowDoubleClick(rowIndex)}
+                >
+                  {columns[view].map((col) => (
+                    <CellTemplate
+                      key={col.id}
+                      rowIndex={rowIndex}
+                      col={col.id as keyof FormData}
+                      value={row[col.id as keyof FormData]}
+                      handleChange={handleChange}
+                      handleKeyDown={handleKeyDown}
+                      adjustTextareaHeight={adjustTextareaHeight}
+                      className={`border-b border-r border-gray-500 ${col.className}`}
+                      view={view}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -320,6 +411,48 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
           Save
         </button>
       </form>
+
+      {modalVisible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="rounded bg-white p-4">
+            <h2 className="mb-4 text-xl font-bold">Create Header</h2>
+            <input
+              type="text"
+              value={headerText}
+              onChange={(e) => setHeaderText(e.target.value)}
+              placeholder="Enter header text"
+              className="mb-4 w-full rounded border border-gray-300 p-2"
+            />
+            <div className="mb-4 flex">
+              {colors.map((color) => (
+                <div
+                  key={color}
+                  className={`mr-2 h-8 w-8 cursor-pointer rounded-full ${color === headerColor ? "ring-2 ring-black" : ""} bg-${color}-100`}
+                  onClick={() => setHeaderColor(color)}
+                />
+              ))}
+            </div>
+            <button
+              onClick={handleModalSubmit}
+              className="rounded bg-blue-500 px-4 py-2 text-white"
+            >
+              Submit
+            </button>
+            <button
+              onClick={handleDeleteHeader}
+              className="ml-2 rounded bg-red-500 px-4 py-2 text-white"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setModalVisible(false)}
+              className="ml-2 rounded bg-gray-500 px-4 py-2 text-white"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -371,6 +504,7 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
             "scrollbar-hidden w-full resize-none border-none text-sm focus:outline-none md:text-base",
             col === "qty" ? "text-center" : "",
           )}
+          rows={1} // Set rows to 1 for single line height
         />
       ) : (
         <span
@@ -443,11 +577,8 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center p-1",
+        "flex items-center border-b border-r border-gray-500 p-1", // Apply same border style for all views
         className,
-        (col === "qty" || col === "description") && view !== "Project Manager"
-          ? "border-white border-b-slate-200"
-          : "",
       )}
     >
       {renderInput()}

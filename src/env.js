@@ -13,7 +13,7 @@ export const env = createEnv({
       .default("development"),
     DIRECT_URL: z.string(),
     SUPABASE_JWT_SECRET: z.string(),
-    GOOGLE_MAPS_API_KEY:z.string(),
+    GOOGLE_MAPS_API_KEY:z.string().optional(),
   },
 
   /**
