@@ -66,11 +66,11 @@ model Item {
     name     String
     notes    String?
 
-    tariffCodeId Int
-    tariffCode   TariffCode @relation(fields: [tariffCodeId], references: [id])
-    pieceID      Int
-    piece        Piece      @relation(fields: [pieceID], references: [id])
-    jobs         Job[]
+    itemTypeId Int
+    itemType   ItemType @relation(fields: [itemTypeId], references: [id])
+    pieceID    String
+    piece      Piece    @relation(fields: [pieceID], references: [id])
+    jobs       Job[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -79,8 +79,9 @@ model Item {
 }
 
 model Piece {
-    id        Int      @id @default(autoincrement())
-    name      String
+    id        String   @id
+    outbound  Boolean
+    type      String
     items     Item[]
     trucks    Truck[]
     jobNumber Int
@@ -88,7 +89,7 @@ model Piece {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    @@index([name])
+    @@index([id, jobNumber, outbound])
 }
 
 model Truck {
@@ -121,7 +122,7 @@ model Location {
     @@index([name])
 }
 
-model TariffCode {
+model ItemType {
     id          Int      @id @default(autoincrement())
     code        String
     description String

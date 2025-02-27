@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeftIcon, MinusCircleIcon, PlusCircleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
@@ -29,25 +30,27 @@ const itemTypes = [
   "Custom Aluminum",
   "Other",
 ]; // Replace with actual item types
-const boothElements = ["Element1", "Element2", "Element3"]; // Replace with actual booth elements
 const newOrExistingOptions = ["New", "Existing", "Rental"];
 const skidTypes = ["Skid", "Crate", "Fabric Bin", "A-Frame", "Other"]; // Replace with actual skid types
 const colors = [
-  "blue",
-  "red",
-  "green",
-  "yellow",
-  "purple",
-  "orange",
-  "pink",
-  "gray",
+  "#D0E2FF", // Light Blue
+  "#FFD6D6", // Light Red
+  "#D4EDDA", // Light Green
+  "#FFF3CD", // Light Yellow
+  "#EAD1DC", // Light Purple
+  "#FFE5B4", // Light Orange
+  "#FFD1DC", // Light Pink
+  "#E0E0E0", // Light Gray
 ];
 
 export default function ItemsList({ jobNumber }: { jobNumber: number }) {
   const router = useRouter();
   const job = api.job.getByJobNumber.useQuery({ jobNumber: jobNumber }).data;
   const [view, setView] = useState<
-    "Account Manager" | "Project Manager" | "Logistics Coordinator"
+    | "Account Manager"
+    | "Project Manager"
+    | "Logistics Coordinator"
+    | "Installer"
   >("Account Manager");
 
   const [formData, setFormData] = useState<FormData[]>(
@@ -71,6 +74,12 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
   const [currentRow, setCurrentRow] = useState<number | null>(null);
   const [headerText, setHeaderText] = useState("");
   const [headerColor, setHeaderColor] = useState(colors[0]);
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    rowIndex: number | null;
+  }>({ visible: false, x: 0, y: 0, rowIndex: null });
 
   const handleChange = (
     rowIndex: number,
@@ -111,6 +120,19 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenu.visible) {
+        setContextMenu({ ...contextMenu, visible: false });
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [contextMenu]);
 
   const handleKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -214,7 +236,7 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
         const newHeaderData = { ...prevHeaderData };
         newHeaderData[currentRow] = {
           text: headerText || "",
-          color: headerColor ?? "blue",
+          color: headerColor ?? "#D0E2FF",
         };
         return newHeaderData;
       });
@@ -237,87 +259,151 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
     }
   };
 
+  const addRow = (index: number) => {
+    const newFormData = [
+      ...formData.slice(0, index + 1),
+      {
+        qty: "",
+        description: "",
+        notes: "",
+        newOrExisting: "",
+        value: 0,
+        skidType: "",
+        itemType: "",
+        boothElement: "",
+        skidID: "",
+      },
+      ...formData.slice(index + 1),
+    ];
+    setFormData(newFormData);
+  };
+
+  const removeRow = (rowIndex: number) => {
+    const newFormData = formData.filter((_, index) => index !== rowIndex);
+    setFormData(newFormData);
+  };
+
+  const handleContextMenu = (
+    event: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    rowIndex: number,
+  ) => {
+    event.preventDefault(); // Prevent the default context menu
+    setContextMenu({
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      rowIndex,
+    });
+  };
+
   const columns = {
     "Account Manager": [
       {
+        id: "itemType",
+        label: "Type",
+        className: "w-[15%] min-w-[80px] max-w-[150px] border-l",
+      },
+      {
+        id: "value",
+        label: "Total Value",
+        className: "w-[15%] min-w-[70px] max-w-[150px] text-center",
+      },
+      {
         id: "qty",
         label: "Qty",
-        className: "w-[10%] min-w-[60px] border-l max-w-[100px]",
+        className: "w-[10%] min-w-[50px] max-w-[100px] border-gray-300 ",
       },
       {
         id: "description",
         label: "Description",
-        className: "min-w-[300px] w-full",
-      },
-      {
-        id: "newOrExisting",
-        label: "New/Existing",
-        className: "w-[12.5%] xl:w-[10%] min-w-[100px]",
-      },
-      {
-        id: "value",
-        label: "Value",
-        className: "w-[10%] xl:w-[100px] min-w-[100px]",
+        className: "w-[70%] min-w-[250px] max-w-[800px] border-gray-300 ",
       },
     ],
     "Project Manager": [
       {
         id: "newOrExisting",
         label: "New/Existing",
-        className: "w-[12.5%] xl:w-[10%] min-w-[100px] border-l ",
+        className: "w-[15%] min-w-[100px] max-w-[150px] border-l",
       },
       {
         id: "qty",
         label: "Qty",
-        className: "w-[10%] min-w-[60px] max-w-[100px]",
+        className: "w-[10%] min-w-[50px] max-w-[100px]",
       },
       {
         id: "description",
         label: "Description",
-        className: "min-w-[300px] w-full",
+        className: "w-[60%] min-w-[300px] max-w-[1000px]",
       },
       {
         id: "notes",
         label: "Notes",
-        className: "w-[17.5%] xl:w-[45%] min-w-[175px]",
+        className: "w-[25%] min-w-[175px] max-w-[600px]",
       },
     ],
     "Logistics Coordinator": [
       {
-        id: "qty",
-        label: "Qty",
-        className: "w-[10%] min-w-[60px] border-l max-w-[100px]",
-      },
-      {
-        id: "description",
-        label: "Description",
-        className: "min-w-[300px] w-full",
-      },
-      {
-        id: "notes",
-        label: "Notes",
-        className: "w-[17.5%] xl:w-[15%] min-w-[175px]",
-      },
-      {
         id: "skidType",
         label: "Skid Type",
-        className: "w-[12.5%] xl:w-[10%] min-w-[100px]",
+        className: "w-[15%] min-w-[100px] max-w-[125px] border-l",
       },
       {
         id: "skidID",
         label: "Skid ID",
-        className: "w-[12.5%] xl:w-[10%] min-w-[80px] max-w-[120px]",
+        className: "w-[15%] min-w-[80px] max-w-[125px]",
+      },
+      {
+        id: "qty",
+        label: "Qty",
+        className: "w-[10%] min-w-[50px] max-w-[100px] border-gray-300 ",
+      },
+      {
+        id: "description",
+        label: "Description",
+        className: "w-[50%] min-w-[250px] max-w-[800px] border-gray-300 ",
+      },
+      {
+        id: "notes",
+        label: "Notes",
+        className: "w-[30%] min-w-[200px] max-w-[600px] border-gray-300 ",
+      },
+    ],
+    Installer: [
+      {
+        id: "skidType",
+        label: "Skid Type",
+        className: "w-[15%] min-w-[100px] max-w-[125px] border-l",
+      },
+      {
+        id: "skidID",
+        label: "Skid ID",
+        className: "w-[15%] min-w-[80px] max-w-[125px]",
+      },
+      {
+        id: "qty",
+        label: "Qty",
+        className: "w-[10%] min-w-[50px] max-w-[100px] border-gray-300 ",
+      },
+      {
+        id: "description",
+        label: "Description",
+        className: "w-[50%] min-w-[250px] max-w-[800px] border-gray-300 ",
+      },
+      {
+        id: "notes",
+        label: "Notes",
+        className: "w-[30%] min-w-[200px] max-w-[600px] border-gray-300 ",
       },
     ],
   };
 
   return (
-    <div className="my-2 w-full">
+    <div className="mx-auto my-2 w-full max-w-7xl">
       <button
         onClick={() => router.push("/")}
-        className="absolute left-4 top-4 rounded bg-gray-500 px-4 py-2 text-white"
+        className="mx-8 my-2 flex rounded bg-gray-500 px-4 py-2 text-white"
       >
-        Back
+        <ArrowLeftIcon /> Back To Home
       </button>
       <div className="text-center text-2xl font-bold md:text-4xl">
         <div>{job?.jobNumber}</div>
@@ -326,29 +412,33 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
         </div>
       </div>
       <div className="my-4 flex justify-center">
-        {["Account Manager", "Project Manager", "Logistics Coordinator"].map(
-          (role) => (
-            <button
-              key={role}
-              onClick={() =>
-                setView(
-                  role as
-                    | "Account Manager"
-                    | "Project Manager"
-                    | "Logistics Coordinator",
-                )
-              }
-              className={cn(
-                "mx-2 rounded px-4 py-2",
-                view === role
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-black",
-              )}
-            >
-              {role}
-            </button>
-          ),
-        )}
+        {[
+          "Account Manager",
+          "Project Manager",
+          "Logistics Coordinator",
+          "Installer",
+        ].map((role) => (
+          <button
+            key={role}
+            onClick={() =>
+              setView(
+                role as
+                  | "Account Manager"
+                  | "Project Manager"
+                  | "Logistics Coordinator"
+                  | "Installer",
+              )
+            }
+            className={cn(
+              "mx-2 rounded px-4 py-2",
+              view === role
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-black",
+            )}
+          >
+            {role}
+          </button>
+        ))}
       </div>
       <form onSubmit={handleSubmit}>
         <div className="m-4 flex flex-col flex-nowrap justify-center overflow-scroll">
@@ -367,39 +457,45 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
                 {col.label}
               </div>
             ))}
+            <div className="w-[50px]"></div>
           </div>
           {formData.map((row, rowIndex) => (
-            <div key={rowIndex}>
-              {headerData[rowIndex] ? (
-                <div
-                  className={cn(
-                    "flex items-center justify-start border pl-16 text-lg font-bold",
-                    `bg-${headerData[rowIndex].color}-100`,
-                    `border-${headerData[rowIndex].color}-800`,
-                  )}
-                  onDoubleClick={() => handleRowDoubleClick(rowIndex)}
-                >
-                  {headerData[rowIndex].text}
-                </div>
-              ) : (
-                <div
-                  className="flex"
-                  onDoubleClick={() => handleRowDoubleClick(rowIndex)}
-                >
-                  {columns[view].map((col) => (
-                    <CellTemplate
-                      key={col.id}
-                      rowIndex={rowIndex}
-                      col={col.id as keyof FormData}
-                      value={row[col.id as keyof FormData]}
-                      handleChange={handleChange}
-                      handleKeyDown={handleKeyDown}
-                      adjustTextareaHeight={adjustTextareaHeight}
-                      className={`border-b border-r border-gray-500 ${col.className}`}
-                      view={view}
-                    />
-                  ))}
-                </div>
+            <div
+              key={rowIndex}
+              className="flex items-center"
+              onContextMenu={(e) => handleContextMenu(e, rowIndex)}
+              onDoubleClick={() => handleRowDoubleClick(rowIndex)} // Ensure double-click is handled
+            >
+              {columns[view].map((col) => (
+                <CellTemplate
+                  key={col.id}
+                  rowIndex={rowIndex}
+                  col={col.id as keyof FormData}
+                  value={row[col.id as keyof FormData]}
+                  handleChange={handleChange}
+                  handleKeyDown={handleKeyDown}
+                  adjustTextareaHeight={adjustTextareaHeight}
+                  className={`border-b border-r border-gray-500 ${col.className}`}
+                  view={view}
+                />
+              ))}
+              {view === "Project Manager" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => addRow(rowIndex)}
+                    className="flex w-[25px] items-center justify-center"
+                  >
+                    <PlusCircleIcon width={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeRow(rowIndex)}
+                    className="flex w-[25px] items-center justify-center"
+                  >
+                    <MinusCircleIcon width={16} />
+                  </button>
+                </>
               )}
             </div>
           ))}
@@ -411,6 +507,45 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
           Save
         </button>
       </form>
+
+      {contextMenu.visible && (
+        <div
+          className="fixed z-50 rounded bg-white shadow-lg"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <ul className="py-1">
+            <li
+              className="cursor-pointer px-4 py-2 hover:bg-gray-200"
+              onClick={() => {
+                if (contextMenu.rowIndex !== null) addRow(contextMenu.rowIndex);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Add Row
+            </li>
+            <li
+              className="cursor-pointer px-4 py-2 hover:bg-gray-200"
+              onClick={() => {
+                if (contextMenu.rowIndex !== null)
+                  removeRow(contextMenu.rowIndex);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Delete Row
+            </li>
+            <li
+              className="cursor-pointer px-4 py-2 hover:bg-gray-200"
+              onClick={() => {
+                if (contextMenu.rowIndex !== null)
+                  handleRowDoubleClick(contextMenu.rowIndex);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Create Header
+            </li>
+          </ul>
+        </div>
+      )}
 
       {modalVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -427,7 +562,8 @@ export default function ItemsList({ jobNumber }: { jobNumber: number }) {
               {colors.map((color) => (
                 <div
                   key={color}
-                  className={`mr-2 h-8 w-8 cursor-pointer rounded-full ${color === headerColor ? "ring-2 ring-black" : ""} bg-${color}-100`}
+                  className={`mr-2 h-8 w-8 cursor-pointer rounded-full ${color === headerColor ? "ring-2 ring-black" : ""}`}
+                  style={{ backgroundColor: color }}
                   onClick={() => setHeaderColor(color)}
                 />
               ))}
@@ -473,7 +609,11 @@ interface CellTemplateProps {
   ) => void;
   adjustTextareaHeight: (textarea: HTMLTextAreaElement) => void;
   className: string;
-  view: "Account Manager" | "Project Manager" | "Logistics Coordinator";
+  view:
+    | "Account Manager"
+    | "Project Manager"
+    | "Logistics Coordinator"
+    | "Installer";
 }
 
 const CellTemplate: React.FC<CellTemplateProps> = ({
@@ -527,6 +667,7 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
           onChange={(e) => handleChange(rowIndex, col, e.target.value)}
           className="w-full border-none text-center text-sm focus:outline-none md:text-base"
         >
+          <option hidden value=""></option>
           {newOrExistingOptions.map((option) => (
             <option key={option} value={option}>
               {option}
@@ -537,12 +678,7 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
     }
 
     if (col === "skidType" || col === "itemType" || col === "boothElement") {
-      const options =
-        col === "skidType"
-          ? skidTypes
-          : col === "itemType"
-            ? itemTypes
-            : boothElements;
+      const options = col === "skidType" ? skidTypes : itemTypes;
       return (
         <select
           id={`input-${rowIndex}-${col}`}
@@ -550,12 +686,43 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
           onChange={(e) => handleChange(rowIndex, col, e.target.value)}
           className="w-full border-none text-center text-sm focus:outline-none md:text-base"
         >
+          <option hidden value=""></option>
           {options.map((type) => (
             <option key={type} value={type}>
               {type}
             </option>
           ))}
         </select>
+      );
+    }
+
+    if (col === "value") {
+      return (
+        <div className="flex items-center">
+          <span className="mr-1">$</span>
+          <input
+            id={`input-${rowIndex}-${col}`}
+            type="text"
+            value={
+              value === 0
+                ? "-"
+                : new Intl.NumberFormat("en-US", { style: "decimal" }).format(
+                    Math.abs(value as number),
+                  )
+            }
+            onChange={(e) =>
+              handleChange(
+                rowIndex,
+                col,
+                e.target.value === "-"
+                  ? 0
+                  : parseFloat(e.target.value.replace(/,/g, "")),
+              )
+            }
+            onKeyDown={(e) => handleKeyDown(e, rowIndex, col)}
+            className="w-full border-none text-center text-sm focus:outline-none md:text-base"
+          />
+        </div>
       );
     }
 
@@ -568,7 +735,9 @@ const CellTemplate: React.FC<CellTemplateProps> = ({
           adjustTextareaHeight(e.target as HTMLTextAreaElement);
         }}
         onKeyDown={(e) => handleKeyDown(e, rowIndex, col)}
-        className="scrollbar-hidden w-full resize-none border-none text-sm focus:outline-none md:text-base"
+        className={cn(
+          "scrollbar-hidden w-full resize-none border-none text-sm focus:outline-none md:text-base",
+        )}
         rows={1}
       />
     );
